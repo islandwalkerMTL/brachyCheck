@@ -1,5 +1,4 @@
-
-####################################################################
+#######################################################################
 #
 # This script will be used to extract data from the dicom file
 # that the physicist uploads. It will later be compared to the
@@ -8,15 +7,16 @@
 #
 # Copyright (c) [2018] [Ellis Mitrou]
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions: 
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the 
+# "Software"), to deal in the Software without restriction, including 
+# without limitation the rights to use, copy, modify, merge, publish, 
+# distribute, sublicense, and/or sell copies of the Software, and to 
+# permit persons to whom the Software is furnished to do so, subject 
+# to the following conditions: 
 
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be 
+# included in all copies or substantial portions of the Software.
 
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -43,26 +43,30 @@ def getChannels(dicom_info):
     ind_length=[]
     ch_total_time = []
     for i in range(0,len(channelseq)):
-        ch_num.append(int(channelseq[i].TransferTubeNumber)) #this is the channel number that the catheter was mapped to.
+        #this is the channel number that the catheter was mapped to.
+        ch_num.append(int(channelseq[i].TransferTubeNumber))
         ind_length.append(int(channelseq[i].ChannelLength))
         ch_total_time.append(float(channelseq[i].ChannelTotalTime))
-        cath_num.append(int(channelseq[i].ChannelNumber)) #this is the catheter number. nucletron calls it a channel though
-
-
+        #this is the catheter number. nucletron calls it a channel though
+        cath_num.append(int(channelseq[i].ChannelNumber)) 
     return ch_num, ind_length, ch_total_time, cath_num
 	
 #Returns the total reference air kerma at 1 m.
 def getTRAK(dicom_info):
     #dicom_info = pydicom.read_file(dicom_file)
-    TRAK_1cm = float(dicom_info.ApplicationSetupSequence[0].TotalReferenceAirKerma)
-    TRAK_1m = TRAK_1cm*0.0001*dicom_info.FractionGroupSequence[0].ReferencedBrachyApplicationSetupSequence[0].BrachyApplicationSetupDose
-
+    TRAK_1cm = float(dicom_info.ApplicationSetupSequence[0] \
+        .TotalReferenceAirKerma)
+    TRAK_1m = TRAK_1cm*0.0001*dicom_info.FractionGroupSequence[0] \
+        .ReferencedBrachyApplicationSetupSequence[0] \
+            .BrachyApplicationSetupDose
     return TRAK_1m
 
 #Returns the prescription in cGy
 def getPrescription(dicom_info):
     #dicom_info = pydicom.read_file(str(dicom_file))
-    prescription = 100*float(dicom_info.FractionGroupSequence[0].ReferencedBrachyApplicationSetupSequence[0].BrachyApplicationSetupDose)
+    prescription = 100*float(dicom_info.FractionGroupSequence[0] \
+        .ReferencedBrachyApplicationSetupSequence[0] \
+            .BrachyApplicationSetupDose)
     return prescription
 
 #Returns the patient INFO
@@ -92,9 +96,13 @@ def getTotalTime(dicom_info):
 
 
 def getHDRcalibration(dicom_info):
-    #This section looks inside a text file and gets the last calibration for the machine name found in the dicom
-    treatment_machine_name = dicom_info.TreatmentMachineSequence[0].TreatmentMachineName
-    filename = '/chum/dsp/Radio-oncologie/commun/Physique' + ' ' + 'radio-onco/Utilisateurs/Ellis/Projets/BrachyCheck/qatrack/Ir192-Activity-CHUM.txt'
+    #This section looks inside a text file and gets 
+	#the last calibration for the machine name found in the dicom
+    treatment_machine_name = dicom_info.TreatmentMachineSequence[0] \
+        .TreatmentMachineName
+    filename = '/chum/dsp/Radio-oncologie/commun/Physique' + ' ' + \
+        'radio-onco/Utilisateurs/Ellis/Projets/BrachyCheck/' + \
+            'qatrack/Ir192-Activity-CHUM.txt'
     calibdate_array=[]
     treatment_machine_array = []
     air_kerma_array = []
@@ -110,8 +118,8 @@ def getHDRcalibration(dicom_info):
 
 	
 	
-	calibration_dateCHUM = calibdate_array#calibdate_array[treatment_machine_array.index(treatment_machine_name)]
-	air_kermaCHUMarray = air_kerma_array#air_kerma_array[treatment_machine_array.index(treatment_machine_name)]
+	calibration_dateCHUM = calibdate_array
+	air_kermaCHUMarray = air_kerma_array
 	
 	
 	#This part gets the dicom air kerma strength and reference date.
@@ -123,10 +131,17 @@ def getHDRcalibration(dicom_info):
 	
 	
 	
-	return air_kermaCHUMarray, calibration_dateCHUM,  air_kermaDICOM, reference_dateDICOM, treatment_machine_array
+	return air_kermaCHUMarray, calibration_dateCHUM,  air_kermaDICOM, \
+        reference_dateDICOM, treatment_machine_array
 
-
-
+def getTreatmentLength(dicom_info):
+    channel_max_rel_pos = []
+    for cath in range(0,len(dicom_info.ApplicationSetupSequence[0] \
+        .ChannelSequence)):
+        channel_max_rel_pos.append(float((dicom_info.ApplicationSetupSequence[0] \
+            .ChannelSequence[cath].BrachyControlPointSequence[-1] \
+                .ControlPointRelativePosition)))
+    return channel_max_rel_pos
 
 #From Danis Blais' catphan analysis program
 
@@ -152,8 +167,6 @@ else:
 
 dicom_info = dicom.read_file(filename)
 
-
-
 HDR_results['nom_plan_HDR'] = getPlanINFO(dicom_info)[0]
 HDR_results['Prescription'] = getPrescription(dicom_info)
 HDR_results['patient_LASTNAME'] = getPatientINFO(dicom_info)[1]
@@ -172,7 +185,7 @@ HDR_results['calibration_dateCHUM'] = getHDRcalibration(dicom_info)[1]
 HDR_results['air_kermaDICOM']= float(getHDRcalibration(dicom_info)[2])
 HDR_results['referecence_dateDICOM']= getHDRcalibration(dicom_info)[3]
 HDR_results['treatment_machine_array']= getHDRcalibration(dicom_info)[4]
-
+HDR_results['channel_max_rel_pos_array'] = getTreatmentLength(dicom_info)
 
 result = HDR_results
 
